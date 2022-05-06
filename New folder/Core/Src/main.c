@@ -46,8 +46,8 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-char RxDataBuffer[1] = {0};
-char TxDataBuffer[1] = {0};
+char ReceiveText[1]={2};
+char CombindText[15]={0};
 uint16_t LEDtoggle = 1000;
 
 /* USER CODE END PV */
@@ -110,10 +110,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // In this work we gonna use the Method Interrupt Mode to work
+	  // Method Interrupt checking click
 
-	  HAL_UART_Receive_IT(&huart2, (uint8_t*)RxDataBuffer, 1);
+	  HAL_UART_Receive_IT(&huart2, (uint8_t*)ReceiveText, 1);
+
 //	  CodeselectingMenu();
+	  CodeselectingMenu();
 
 	  // This section just simmulate the LED work
 	  HAL_Delay(LEDtoggle);
@@ -238,19 +240,56 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+//Menu Bar
 //void CodeselectingMenu(){
-//	char Recieve[2]= {0};
+//	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
+//	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\e\r\n d:On/off\r\n x:back\r\n";
+//	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
+//	char NO_Menu[]="No Menu that you type\r\n";
+//	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
 //
-//	HAL_UART_Receive_IT(&huart2, (uint8_t*)Recieve, 2);
-//	sprintf(RxDataBuffer, "Received:[%s]\r\n", Recieve);
-//	HAL_UART_Transmit(&huart2, (uint8_t*)RxDataBuffer, strlen(RxDataBuffer), 1000);
+//	uint16_t statecase = 0;
+//	statecase = ReceiveText;
+//	switch(statecase){
+//		case 0 :
+//			HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
+//			break;
+//
+//		case 1 :
+//			HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
+//			break;
+//
+//		default :
+//			HAL_UART_Transmit(&huart2, (uint8_t*)NO_Menu, strlen(NO_Menu), 10);
+//	}
 //
 //}
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void CodeselectingMenu(){
+	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
+	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\e\r\n d:On/off\r\n x:back\r\n";
+	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
+	char NO_Menu[]="No Menu that you type\r\n";
+	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+
+	if (ReceiveText[0] == 48){
+		HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
+	}
+	else if (ReceiveText[0] == 49){
+		HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
+	}
+	else if (ReceiveText[0] != 48 && ReceiveText[0] != 49){
+		HAL_UART_Transmit(&huart2, (uint8_t*)NO_Menu, strlen(NO_Menu), 10);
+	}
+
+}
+
+
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)			// run 1 interrupt after type 10 character
 {
-	sprintf(TxDataBuffer, "Received:[%s]\r\n", RxDataBuffer);
-	HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+	sprintf(CombindText, "Received:[%s]\r\n", ReceiveText);
+	HAL_UART_Transmit(&huart2, (uint8_t*)CombindText, strlen(CombindText), 1000);
 }
 
 
