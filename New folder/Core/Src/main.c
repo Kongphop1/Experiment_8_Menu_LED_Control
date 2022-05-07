@@ -46,7 +46,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-char ReceiveText[1]={2};
+char ReceiveText[1]={0};
 char CombindText[15]={0};
 uint16_t LEDtoggle = 1000;
 
@@ -100,9 +100,13 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+//  system("CLS");		//clear screen display
+
   // First time Print the menu
   char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
   HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+
+
 
   /* USER CODE END 2 */
 
@@ -110,12 +114,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Method Interrupt checking click
+// 	Method Interrupt checking click
 
 	  HAL_UART_Receive_IT(&huart2, (uint8_t*)ReceiveText, 1);
 
 //	  CodeselectingMenu();
-	  CodeselectingMenu();
+	  while (ReceiveText[0] > 0){
+		  CodeselectingMenu();
+	  }
 
 	  // This section just simmulate the LED work
 	  HAL_Delay(LEDtoggle);
@@ -240,7 +246,61 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+// A = ASCII "65" And a = ASCII "97"
+// S = ASCII "83" And s = ASCII "115"
+// D = ASCII "68" And d = ASCII "100"
+// X = ASCII "88" And x = ASCII "120"
+// 0 = ASCII "48"
+// 1 = ASCII "49"
+
 //Menu Bar
+void CodeselectingMenu(){
+	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
+	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\r\n d:On/off\r\n x:back\r\n";
+	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
+	char NO_Menu[]="No Menu that you type\r\n";
+	char Selecting_speed_up_LED[]="You are seclecting Speed Up +1Hz Function";
+	char Selecting_speed_down_LED[]="You are seclecting Speed Down -1Hz Function";
+	char Selecting_On_or_Off_LED[]="You are seclecting On/Off Function";
+	char Selecting_back[]="You are seclecting back Function";
+	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+
+	uint16_t statecase = 0;
+	statecase = ReceiveText[0];
+	switch(statecase){
+		case 48 :
+			HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
+
+			switch(statecase){
+				case 97 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_speed_up_LED, strlen(Selecting_speed_up_LED), 10);
+					LEDtoggle++;
+					break;
+
+				case 115 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_speed_down_LED, strlen(Selecting_speed_down_LED), 10);
+					LEDtoggle--;
+					break;
+
+				case 100 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_On_or_Off_LED, strlen(Selecting_On_or_Off_LED), 10);
+					HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);	// toggle LED PA5
+					break;
+
+				case 120 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_back, strlen(Selecting_back), 10);
+
+					break;
+			}
+			break;
+
+		case 49 :
+			HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
+			break;
+	}
+	ReceiveText[0] = 0;
+}
+
 //void CodeselectingMenu(){
 //	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
 //	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\e\r\n d:On/off\r\n x:back\r\n";
@@ -248,41 +308,17 @@ static void MX_GPIO_Init(void)
 //	char NO_Menu[]="No Menu that you type\r\n";
 //	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
 //
-//	uint16_t statecase = 0;
-//	statecase = ReceiveText;
-//	switch(statecase){
-//		case 0 :
-//			HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
-//			break;
-//
-//		case 1 :
-//			HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
-//			break;
-//
-//		default :
-//			HAL_UART_Transmit(&huart2, (uint8_t*)NO_Menu, strlen(NO_Menu), 10);
+//	if (ReceiveText[0] == 48){
+//		HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
+//	}
+//	else if (ReceiveText[0] == 49){
+//		HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
+//	}
+//	else if (ReceiveText[0] != 48 && ReceiveText[0] != 49){
+//		HAL_UART_Transmit(&huart2, (uint8_t*)NO_Menu, strlen(NO_Menu), 10);
 //	}
 //
 //}
-
-void CodeselectingMenu(){
-	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
-	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\e\r\n d:On/off\r\n x:back\r\n";
-	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
-	char NO_Menu[]="No Menu that you type\r\n";
-	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
-
-	if (ReceiveText[0] == 48){
-		HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
-	}
-	else if (ReceiveText[0] == 49){
-		HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
-	}
-	else if (ReceiveText[0] != 48 && ReceiveText[0] != 49){
-		HAL_UART_Transmit(&huart2, (uint8_t*)NO_Menu, strlen(NO_Menu), 10);
-	}
-
-}
 
 
 
