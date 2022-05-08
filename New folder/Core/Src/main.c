@@ -47,11 +47,12 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 char ReceiveText[1]={0};
-char Checkfromlast[10]={0};
+char Checkfromlast[3]={0};
 char CombindText[15]={0};
 uint16_t LEDtoggle = 1000;
 uint8_t count = 0;
 uint16_t countDisplay = 0;
+uint8_t checkclickB1 = 0;
 
 /* USER CODE END PV */
 
@@ -264,6 +265,8 @@ void CodeselectingMenu(uint8_t numselect){
 	char Selecting_On_or_Off_LED[]="You are seclecting On/Off Function\r\n";
 	char Selecting_back[]="You are seclecting back Function\r\n";
 	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
+	char Do_not_Press_Button_B1[]="Button B1 don't press\r\n";
+	char Press_Button_B1[]="Button B1 press\r\n";
 //	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
 
 	Checkfromlast[count] = numselect;
@@ -310,6 +313,13 @@ void CodeselectingMenu(uint8_t numselect){
 					HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
 				}
 
+				checkclickB1 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+				if(checkclickB1 == 1){
+					HAL_UART_Transmit(&huart2, (uint8_t*)Do_not_Press_Button_B1, strlen(Do_not_Press_Button_B1), 10);
+				}
+				else if(checkclickB1 == 0){
+					HAL_UART_Transmit(&huart2, (uint8_t*)Press_Button_B1, strlen(Press_Button_B1), 10);
+				}
 				break;
 		}
 	}
