@@ -47,9 +47,11 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 char ReceiveText[1]={0};
-char Checkfromlast[1]={0};
+char Checkfromlast[10]={0};
 char CombindText[15]={0};
 uint16_t LEDtoggle = 1000;
+uint8_t count = 0;
+uint16_t countDisplay = 0;
 
 /* USER CODE END PV */
 
@@ -253,30 +255,64 @@ static void MX_GPIO_Init(void)
 //Menu Bar
 void CodeselectingMenu(uint8_t numselect){
 	//Announce List Menu in char
-	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n b:Speed Down -1Hz\r\n d:On/off\r\n x:back\r\n";
+	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n s:Speed Down -1Hz\r\n d:On/off\r\n x:back\r\n";
 	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
 	char NO_Menu[]="No Menu that you type\r\n";
-	char Selecting_speed_up_LED[]="You are seclecting Speed Up +1Hz Function";
-	char Selecting_speed_down_LED[]="You are seclecting Speed Down -1Hz Function";
-	char Selecting_On_or_Off_LED[]="You are seclecting On/Off Function";
-	char Selecting_back[]="You are seclecting back Function";
-//	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
+	char Do_Noting[]="Do noting\r\n";
+	char Selecting_speed_up_LED[]="You are seclecting Speed Up +1Hz Function\r\n";
+	char Selecting_speed_down_LED[]="You are seclecting Speed Down -1Hz Function\r\n";
+	char Selecting_On_or_Off_LED[]="You are seclecting On/Off Function\r\n";
+	char Selecting_back[]="You are seclecting back Function\r\n";
+	char Select_Menu[]="Please Select the Menu from Below\r\n 0.LED Control\r\n 1.button Status\r\n";
 //	HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
 
-	if(Checkfromlast[0] != numselect){
-		switch(numselect){
-			case 48 :
-				HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);
-
+	Checkfromlast[count] = numselect;
+	if(Checkfromlast[0] == 48 || Checkfromlast[0] == 49){
+			switch(Checkfromlast[0]){
+				case 48 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)LED_Menu, strlen(LED_Menu), 10);		// Display LED_Menu
+					count = 1;
+					if(Checkfromlast[1] == 97 || Checkfromlast[1] == 115 || Checkfromlast[1] == 100 || Checkfromlast[1] == 120){
+						switch(Checkfromlast[1]){
+							case 97:
+								HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_speed_up_LED, strlen(Selecting_speed_up_LED), 10);		// Display Speed Up Function
+								LEDtoggle++;
+								Checkfromlast[1] = 0;
+								break;
+							case 115:
+								HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_speed_down_LED, strlen(Selecting_speed_down_LED), 10);		// Display Speed Down Function
+								LEDtoggle--;
+								Checkfromlast[1] = 0;
+								break;
+							case 100:
+								HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_On_or_Off_LED, strlen(Selecting_On_or_Off_LED), 10);		// Display On/Off Function
+								HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+								Checkfromlast[1] = 0;
+								break;
+							case 120:
+								HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_back, strlen(Selecting_back), 10);		// Display Back Function
+								Checkfromlast[0] = 0;
+								Checkfromlast[1] = 0;
+								count = 0;
+								HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+								break;
+						}
+					}
 				break;
 			case 49 :
-				HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);
-
+				HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);		// Display button_Status_Menu
+				count = 1;
+				if (Checkfromlast[1] == 120){
+					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_back, strlen(Selecting_back), 10);		// Display Back Function
+					Checkfromlast[0] = 0;
+					Checkfromlast[1] = 0;
+					count = 0;
+					HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+				}
 
 				break;
 		}
 	}
-	Checkfromlast[0] = numselect;
 }
 
 
