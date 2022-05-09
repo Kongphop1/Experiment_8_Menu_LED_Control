@@ -46,9 +46,9 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-char RxDataBuffer[3] ={ 0 };
+char RxDataBuffer[1] ={ 0 };
 char Checkfromlast[3]={0};
-char TxDataBuffer[15] ={ 0 };
+char TxDataBuffer[20] ={ 0 };
 uint16_t LEDtoggle = 1000;
 uint8_t count = 0;
 uint16_t countDisplay = 0;
@@ -63,8 +63,8 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 void CodeselectingMenu(uint8_t numselect);
-uint16_t UARTrecieveIT();
 
+int16_t UARTRecieveIT();
 
 
 /* USER CODE END PFP */
@@ -120,17 +120,16 @@ int main(void)
   {
 // 	Method Interrupt checking click
 
-	  HAL_UART_Receive_IT(&huart2, (uint8_t*) RxDataBuffer, 3);
+	  HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 1);
 
-	  //this function is detect 1 time
-	  uint16_t inputchar = UARTrecieveIT();
-	  if(inputchar != -1){
+	  // this function is trick for 1 round to detect that have type in
+	  int16_t inputchar = UARTRecieveIT();	// this buffer is for call cpu wait to do another thing
+	  if(inputchar!=-1)
+	  {
 		  CodeselectingMenu(RxDataBuffer[0]);
 		  sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);		// default function printf
 		  HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
 	  }
-
-//	  CodeselectingMenu( RxDataBuffer[0]);
 
 	  // This section just simmulate the LED work
 	  //HAL_Delay(LEDtoggle);
@@ -255,11 +254,13 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-uint16_t UARTrecieveIT(){				// this function is to check
-	static uint32_t dataPos = 0;		// track position
+int16_t UARTRecieveIT()		// this function is to check
+{
+	static uint32_t dataPos =0;		// track recently position
 	int16_t data=-1;
-	if(huart2.RxXferSize - huart2.RxXferCount != dataPos){ // this will work if size - typein don't be zero
-		data = RxDataBuffer[dataPos];		//get data of char position in array of RxDataBuffer (the data that return is a number is ASCII)
+	if(huart2.RxXferSize - huart2.RxXferCount!=dataPos)  // this will work if size - typein don't be zero
+	{
+		data=RxDataBuffer[dataPos];		//get data of char position in array of RxDataBuffer (the data that return is a number is ASCII)
 		dataPos= (dataPos+1)%huart2.RxXferSize;		//calculate if the value is go to the end after mod with size of huart2.RxXferSize will continue to count the first once again
 	}
 	return data;
