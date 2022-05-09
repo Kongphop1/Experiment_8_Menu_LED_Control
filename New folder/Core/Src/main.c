@@ -46,9 +46,9 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-char ReceiveText[1]={0};
+char RxDataBuffer[3] ={ 0 };
 char Checkfromlast[3]={0};
-char CombindText[15]={0};
+char TxDataBuffer[15] ={ 0 };
 uint16_t LEDtoggle = 1000;
 uint8_t count = 0;
 uint16_t countDisplay = 0;
@@ -63,6 +63,7 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 void CodeselectingMenu(uint8_t numselect);
+uint16_t UARTrecieveIT();
 
 
 
@@ -119,13 +120,21 @@ int main(void)
   {
 // 	Method Interrupt checking click
 
-	  HAL_UART_Receive_IT(&huart2, (uint8_t*)ReceiveText, 1);
+	  HAL_UART_Receive_IT(&huart2, (uint8_t*) RxDataBuffer, 3);
 
-	  CodeselectingMenu(ReceiveText[0]);
+	  //this function is detect 1 time
+	  uint16_t inputchar = UARTrecieveIT();
+	  if(inputchar != -1){
+		  CodeselectingMenu(RxDataBuffer[0]);
+		  sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);		// default function printf
+		  HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+	  }
+
+//	  CodeselectingMenu( RxDataBuffer[0]);
 
 	  // This section just simmulate the LED work
-	  HAL_Delay(LEDtoggle);
-	  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  //HAL_Delay(LEDtoggle);
+	  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
     /* USER CODE END WHILE */
 
@@ -246,6 +255,16 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+uint16_t UARTrecieveIT(){				// this function is to check
+	static uint32_t dataPos = 0;		// track position
+	int16_t data=-1;
+	if(huart2.RxXferSize - huart2.RxXferCount != dataPos){ // this will work if size - typein don't be zero
+		data = RxDataBuffer[dataPos];		//get data of char position in array of RxDataBuffer (the data that return is a number is ASCII)
+		dataPos= (dataPos+1)%huart2.RxXferSize;		//calculate if the value is go to the end after mod with size of huart2.RxXferSize will continue to count the first once again
+	}
+	return data;
+}
+
 // A = ASCII "65" And a = ASCII "97"
 // S = ASCII "83" And s = ASCII "115"
 // D = ASCII "68" And d = ASCII "100"
@@ -301,37 +320,36 @@ void CodeselectingMenu(uint8_t numselect){
 								break;
 						}
 					}
-				break;
-			case 49 :
-				HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);		// Display button_Status_Menu
-				count = 1;
-				if (Checkfromlast[1] == 120){
-					HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_back, strlen(Selecting_back), 10);		// Display Back Function
-					Checkfromlast[0] = 0;
-					Checkfromlast[1] = 0;
-					count = 0;
-					HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
-				}
+					break;
+				case 49 :
+					HAL_UART_Transmit(&huart2, (uint8_t*)button_Status, strlen(button_Status), 10);		// Display button_Status_Menu
+					count = 1;
+					if (Checkfromlast[1] == 120){
+						HAL_UART_Transmit(&huart2, (uint8_t*)Selecting_back, strlen(Selecting_back), 10);		// Display Back Function
+						Checkfromlast[0] = 0;
+						Checkfromlast[1] = 0;
+						count = 0;
+						HAL_UART_Transmit(&huart2, (uint8_t*)Select_Menu, strlen(Select_Menu), 10);
+					}
 
-				checkclickB1 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
-				if(checkclickB1 == 1){
-					HAL_UART_Transmit(&huart2, (uint8_t*)Do_not_Press_Button_B1, strlen(Do_not_Press_Button_B1), 10);
-				}
-				else if(checkclickB1 == 0){
-					HAL_UART_Transmit(&huart2, (uint8_t*)Press_Button_B1, strlen(Press_Button_B1), 10);
-				}
-				break;
+					checkclickB1 = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+					if(checkclickB1 == 1){
+						HAL_UART_Transmit(&huart2, (uint8_t*)Do_not_Press_Button_B1, strlen(Do_not_Press_Button_B1), 10);
+					}
+					else if(checkclickB1 == 0){
+						HAL_UART_Transmit(&huart2, (uint8_t*)Press_Button_B1, strlen(Press_Button_B1), 10);
+					}
+					break;
 		}
 	}
 }
 
 
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)			// run 1 interrupt after type 10 character(fuction that )
-{
-	sprintf(CombindText, "Received:[%s]\r\n", ReceiveText);
-	HAL_UART_Transmit(&huart2, (uint8_t*)CombindText, strlen(CombindText), 1000);		//Function that get form stm32 to display monitor
-}
+//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)			// run 1 interrupt after type all character in value RxDataBuffer
+//{
+//	sprintf(TxDataBuffer, "Received:[%s]\r\n", RxDataBuffer);
+//	HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);		//Function that get form stm32 to display monitor
+//}
 
 
 /* USER CODE END 4 */
