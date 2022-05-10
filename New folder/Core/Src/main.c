@@ -46,13 +46,13 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-char RxDataBuffer[1] ={ 0 };
+char RxDataBuffer[3] ={ 0 };
 char Checkfromlast[3]={0};
 char TxDataBuffer[20] ={ 0 };
 uint16_t LEDtoggle = 1000;
 uint8_t count = 0;
-uint16_t countDisplay = 0;
 uint8_t checkclickB1 = 0;
+uint32_t Timecount = 0;
 
 /* USER CODE END PV */
 
@@ -62,7 +62,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
-void CodeselectingMenu(uint8_t numselect);
+void CodeselectingMenu(uint16_t numselect);
 
 int16_t UARTRecieveIT();
 
@@ -118,22 +118,33 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-// 	Method Interrupt checking click
 
-	  HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 1);
+	  // TimeDelay for loop slow
+	  static uint32_t timeUpdate = 0;
+	  if (HAL_GetTick() - timeUpdate >= 100){
+		  timeUpdate = HAL_GetTick();
 
-	  // this function is trick for 1 round to detect that have type in
-	  int16_t inputchar = UARTRecieveIT();	// this buffer is for call cpu wait to do another thing
-	  if(inputchar!=-1)
-	  {
-		  CodeselectingMenu(RxDataBuffer[0]);
-		  sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);		// default function printf
-		  HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+		  // 	Method Interrupt checking click
+		  HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 3);
+
+		  // this function is trick for 1 round to detect that have type in
+		  int16_t inputchar = UARTRecieveIT();	// this buffer is for call cpu wait to do another thing
+
+		  if(inputchar!=-1)
+		  {
+			  CodeselectingMenu(inputchar);
+			  sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);		// default function printf
+			  HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+		  }
 	  }
 
 	  // This section just simmulate the LED work
-	  //HAL_Delay(LEDtoggle);
-	  //HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  static uint32_t timeStamp = 0;
+	  Timecount = HAL_GetTick();
+	  if(Timecount - timeStamp >= LEDtoggle){
+		  timeStamp = HAL_GetTick();
+		  HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	  }
 
     /* USER CODE END WHILE */
 
@@ -274,12 +285,10 @@ int16_t UARTRecieveIT()		// this function is to check
 // 1 = ASCII "49"
 
 //Menu Bar
-void CodeselectingMenu(uint8_t numselect){
+void CodeselectingMenu(uint16_t numselect){
 	//Announce List Menu in char
 	char LED_Menu[]="You are Selecting LED Control Menu\r\n a:Speed Up +1Hz\r\n s:Speed Down -1Hz\r\n d:On/off\r\n x:back\r\n";
 	char button_Status[]="You are Selecting Button Status Menu\r\n x:back\r\n You need to press B1 switch to detect and show status\r\n" ;
-	char NO_Menu[]="No Menu that you type\r\n";
-	char Do_Noting[]="Do noting\r\n";
 	char Selecting_speed_up_LED[]="You are seclecting Speed Up +1Hz Function\r\n";
 	char Selecting_speed_down_LED[]="You are seclecting Speed Down -1Hz Function\r\n";
 	char Selecting_On_or_Off_LED[]="You are seclecting On/Off Function\r\n";
